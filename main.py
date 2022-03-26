@@ -1,3 +1,5 @@
+import random
+
 from flask import Flask, render_template, redirect, url_for, flash
 from flask_bootstrap import Bootstrap
 from flask_ckeditor import CKEditor
@@ -14,6 +16,12 @@ from functools import wraps
 from flask import abort
 from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 from flask_gravatar import Gravatar
+from bs4 import BeautifulSoup
+import requests
+import lxml
+import html
+from newspaper import Config, Article, Source
+import newspaper
 import os
 
 app = Flask(__name__)
@@ -24,15 +32,59 @@ ckeditor = CKEditor(app)
 Bootstrap(app)
 
 # CONNECT TO DB
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL",  "sqlite:///blog.db")
-# SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL').replace("://", "ql://", 1)
-# app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL",  "postgresql://blog.db")
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL", "sqlite:///blog.db")
+
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 gravatar = Gravatar(app, size=100, rating='g', default='retro', force_default=False, force_lower=False, use_ssl=False,
                     base_url=None)
+
+headers = {'Accept-Language': "en-US,en;q=0.9",
+           'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36"}
+
+URL = "https://gadgets360.com/mobiles/news"
+
+response = requests.get(url=URL, headers=headers)
+
+yc_webpage = html.unescape(response.text)
+
+soup = BeautifulSoup(yc_webpage, "lxml")
+
+all_news_links = soup.select('div.caption_box>a')
+
+news_urls = []
+
+for new_link in all_news_links:
+    news_url = new_link.find_next(name='a')
+    news_url = news_url.get_attribute_list('href')[0]
+    if news_url != 'https://gadgets360.com/mobiles':
+        news_urls.append(news_url)
+
+
+def random_post_process():
+    config = Config()
+    config.keep_article_html = True
+
+    article_id = random.randint(0, 20)
+    try:
+        article = Article(url=news_urls[article_id], config=config)
+    except IndexError:
+        article = Article(url=news_urls[0], config=config)
+
+    article.download()
+
+    article.parse()
+
+    # random_post_content = article.text
+    random_post_content = article.article_html
+
+    random_post_title = article.title
+
+    random_post_img = article.top_img
+
+    return random_post_title, random_post_img, random_post_content
 
 
 # Create admin-only decorator
@@ -42,7 +94,7 @@ def admin_only(f):
         # If id is not 1 then return abort with 403 error
         if not current_user.is_authenticated or current_user.id != 1:
             return abort(403)
-        # Otherwise continue with the route function
+        # Otherwise, continue with the route function
         return f(*args, **kwargs)
 
     return decorated_function
@@ -64,9 +116,6 @@ class User(UserMixin, db.Model):
     comments = relationship("Comment", back_populates="comment_author")
 
 
-# db.create_all()
-
-
 class Comment(db.Model):
     __tablename__ = "comments"
     id = db.Column(db.Integer, primary_key=True)
@@ -78,16 +127,13 @@ class Comment(db.Model):
     parent_post = relationship("BlogPost", back_populates="comments")
     text = db.Column(db.Text, nullable=False)
 
-#
-# db.create_all()
-
 
 class BlogPost(db.Model):
     __tablename__ = "blog_posts"
     id = db.Column(db.Integer, primary_key=True)
     author_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     author = relationship("User", back_populates="posts")
-    title = db.Column(db.String(250), unique=True, nullable=False)
+    title = db.Column(db.String(250), unique=False, nullable=False)
     subtitle = db.Column(db.String(250), nullable=False)
     date = db.Column(db.String(250), nullable=False)
     body = db.Column(db.Text, nullable=False)
@@ -174,7 +220,7 @@ def contact():
     return render_template("contact.html", current_user=current_user)
 
 
-@app.route("/new-post", methods=['POST','GET'])
+@app.route("/new-post", methods=['POST', 'GET'])
 # Mark with decorator
 @admin_only
 def add_new_post():
@@ -185,6 +231,34 @@ def add_new_post():
             subtitle=form.subtitle.data,
             body=form.body.data,
             img_url=form.img_url.data,
+            author=current_user,
+            date=date.today().strftime("%B %d, %Y")
+        )
+        db.session.add(new_post)
+        db.session.commit()
+        return redirect(url_for("get_all_posts"))
+    return render_template("make-post.html", form=form, current_user=current_user)
+
+
+@app.route("/random-post", methods=['POST', 'GET'])
+# Mark with decorator
+@admin_only
+def add_random_post():
+    random_post_title, random_post_img, random_post_content = random_post_process()
+    form = CreatePostForm(
+        title=random_post_title[0:40],
+        subtitle=random_post_title,
+        body=random_post_content,
+        img_url=random_post_img,
+    )
+    # current_user.__name='bot'
+    if form.validate_on_submit():
+        new_post = BlogPost(
+            title=form.title.data,
+            subtitle=form.subtitle.data,
+            body=form.body.data,
+            img_url=form.img_url.data,
+
             author=current_user,
             date=date.today().strftime("%B %d, %Y")
         )
@@ -209,7 +283,7 @@ def edit_post(post_id):
         post.title = edit_form.title.data
         post.subtitle = edit_form.subtitle.data
         post.img_url = edit_form.img_url.data
-        post.author = edit_form.author.data
+        # post.author = edit_form.author.data
         post.body = edit_form.body.data
         db.session.commit()
         return redirect(url_for("show_post", post_id=post.id))
@@ -260,4 +334,4 @@ def login():
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
