@@ -24,4 +24,4 @@ psycopg2-binary==2.9.3
 
 lxml==4.8.0
 beautifulsoup4==4.10.0
-newspaper3k = 0.2.8
+newspaper3k==0.2.8
