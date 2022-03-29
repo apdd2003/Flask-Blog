@@ -227,15 +227,17 @@ def get_all_posts():
 
 @app.route('/logout')
 def logout():
-    token = google_bp.token["access_token"]
-    resp = google.post(
-        "https://accounts.google.com/o/oauth2/revoke",
-        params={"token": token},
-        headers={"Content-Type": "application/x-www-form-urlencoded"}
-    )
-    assert resp.ok, resp.text
+    if google.authorized:
+        token = google_bp.token["access_token"]
+        resp = google.post(
+            "https://accounts.google.com/o/oauth2/revoke",
+            params={"token": token},
+            headers={"Content-Type": "application/x-www-form-urlencoded"}
+        )
+        assert resp.ok, resp.text
+        del google_bp.token  # Delete OAuth token from storage
     logout_user()  # Delete Flask-Login's session cookie
-    del google_bp.token  # Delete OAuth token from storage
+
     return redirect(url_for('get_all_posts'))
 
 
