@@ -8,10 +8,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
-# from forms import CreatePostForm
-# from flask_gravatar import Gravatar
-# from wtforms import TextAreaField
-# from flask_wtf import FlaskForm
 from functools import wraps
 from flask import abort
 from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
@@ -23,8 +19,21 @@ import html
 from newspaper import Config, Article, Source
 import newspaper
 import os
+from flask_dance.contrib.google import make_google_blueprint, google
+
 
 app = Flask(__name__)
+
+# ############ OAUTH #######
+os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = '1'
+os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = '1'
+
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "supersekrit")
+app.config["GOOGLE_OAUTH_CLIENT_ID"] = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
+app.config["GOOGLE_OAUTH_CLIENT_SECRET"] = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
+google_bp = make_google_blueprint(scope=["profile", "email"])
+app.register_blueprint(google_bp, url_prefix="/google-login")
+#############################
 
 app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY")
 # print(os.environ.get("SECRET_KEY"))
@@ -150,6 +159,27 @@ class BlogPost(db.Model):
 db.create_all()
 
 
+@app.route('/login/google')
+def google_auth():
+    if not google.authorized:
+        return redirect(url_for("google.login"))
+    resp = google.get("/oauth2/v1/userinfo")
+    # assert resp.ok, resp.text
+    user_email = resp.json()['email']
+    user = User.query.filter_by(email=user_email).first()
+    if user:
+        login_user(user)
+        return redirect(url_for("about"))
+    else:
+        new_user = User(email=user_email,
+                        name=resp.json()['name'])
+        db.session.add(new_user)
+        db.session.commit()
+        login_user(new_user)
+
+    return redirect(url_for("get_all_post"))
+
+
 # Register new users into the User database
 @app.route('/register', methods=["GET", "POST"])
 def register():
@@ -183,13 +213,29 @@ def register():
 
 @app.route('/')
 def get_all_posts():
+    if google.authorized:
+        resp = google.get("/oauth2/v1/userinfo")
+        # assert resp.ok, resp.text
+        user_email = resp.json()['email']
+        user = User.query.filter_by(email=user_email).first()
+        if user:
+            login_user(user)
+
     posts = BlogPost.query.all()
     return render_template("index.html", all_posts=posts, current_user=current_user)
 
 
 @app.route('/logout')
 def logout():
-    logout_user()
+    token = google_bp.token["access_token"]
+    resp = google.post(
+        "https://accounts.google.com/o/oauth2/revoke",
+        params={"token": token},
+        headers={"Content-Type": "application/x-www-form-urlencoded"}
+    )
+    assert resp.ok, resp.text
+    logout_user()  # Delete Flask-Login's session cookie
+    del google_bp.token  # Delete OAuth token from storage
     return redirect(url_for('get_all_posts'))
 
 

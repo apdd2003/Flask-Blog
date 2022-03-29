@@ -46,6 +46,9 @@
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('register') }}">Register</a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link btn btn-outline-success" href="{{ url_for('google_auth') }}"><span>Login with Google</span></a>
+          </li>
           {% else: %}
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('logout') }}">Log Out</a>
