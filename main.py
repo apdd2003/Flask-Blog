@@ -169,7 +169,7 @@ def google_auth():
     user = User.query.filter_by(email=user_email).first()
     if user:
         login_user(user)
-        return redirect(url_for("about"))
+        return redirect(url_for("get_all_post"))
     else:
         new_user = User(email=user_email,
                         name=resp.json()['name'])
