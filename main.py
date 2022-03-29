@@ -222,7 +222,7 @@ def get_all_posts():
             login_user(user)
 
     posts = BlogPost.query.all()
-    return render_template("index.html", all_posts=posts, current_user=current_user)
+    return render_template("index.html", all_posts=posts[::-1], current_user=current_user)
 
 
 @app.route('/logout')
