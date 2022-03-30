@@ -1,61 +1,67 @@
+
 {% include "header.html" %}
 
-  <!-- Page Header -->
-  <header class="masthead" style="background-image: url('https://images.unsplash.com/photo-1617471346061-5d329ab9c574?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80')">
+<!-- Page Header -->
+<header class="masthead"
+        style="background-image: url('https://images.unsplash.com/photo-1617471346061-5d329ab9c574?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80')">
     <div class="overlay"></div>
     <div class="container">
-      <div class="row">
-        <div class="col-lg-8 col-md-10 mx-auto">
-          <div class="site-heading">
-            <h1>Sam's Blog</h1>
-            <span class="subheading">Blog site for enhancing my Python skills.</span>
-            <p class="subheading" >Following blogs are auto-generated with the help of Beautiful Soup and Newspaper3k Libs</p>
-          </div>
+        <div class="row">
+            <div class="col-lg-8 col-md-10 mx-auto">
+                <div class="site-heading">
+                    <h1>Sam's Blog</h1>
+                    <div class="container-fluid">
+                        <span class="subheading">Blog site for enhancing my Python skills.</span>
+                        <span class="subheading">Following blogs are auto-generated with the help of Beautiful Soup and
+                            Newspaper3k Libs</span>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </header>
+</header>
 
-  <!-- Main Content -->
-  <div class="container">
+<!-- Main Content -->
+<div class="container">
     <div class="row">
-      <div class="col-lg-8 col-md-10 mx-auto">
-        {% for post in all_posts %}
-        <div class="post-preview">
-          <a href="{{ url_for('show_post', post_id=post.id) }}">
-            <h2 class="post-title">
-              {{post.title}}
-            </h2>
-            <h3 class="post-subtitle">
-              {{post.subtitle}}
-            </h3>
-          </a>
-          <p class="post-meta">Posted by
-             {{post.author.name}}
-            on {{post.date}}
+        <div class="col-lg-8 col-md-10 mx-auto">
+            {% for post in all_posts %}
+            <div class="post-preview">
+                <a href="{{ url_for('show_post', post_id=post.id) }}">
+                    <h2 class="post-title">
+                        {{post.title}}
+                    </h2>
+                    <h3 class="post-subtitle">
+                        {{post.subtitle}}
+                    </h3>
+                </a>
+                <p class="post-meta">Posted by
+                    {{post.author.name}}
+                    on {{post.date}}
 
-<!--        If user id is 1 then they can see the delete button -->
+                    <!--        If user id is 1 then they can see the delete button -->
+                    {% if current_user.id == 1: %}
+                    <a href="{{url_for('delete_post', post_id=post.id) }}">✘</a>
+                    {% endif %}
+                    <span style="margin:5px"><i class="fa-solid fa-comment-dots" style="margin:5px"></i>{{post.comments|length}} comments</span>
+
+                </p>
+            </div>
+            {% endfor %}
+
+
+            <!-- New Post -->
+            <!--    If user id is 1 then they can see the Create New Post button -->
             {% if current_user.id == 1: %}
-            <a href="{{url_for('delete_post', post_id=post.id) }}">✘</a>
+            <div class="clearfix">
+                <a class="btn btn-primary float-right" href="{{url_for('add_new_post')}}">Create New Post</a>
+                <a class="btn btn-primary float-left" href="{{url_for('add_random_post')}}">Generate Random Post</a>
+            </div>
+
             {% endif %}
-
-          </p>
         </div>
-        {% endfor %}
-
-
-        <!-- New Post -->
-<!--    If user id is 1 then they can see the Create New Post button -->
-        {% if current_user.id == 1: %}
-        <div class="clearfix">
-          <a class="btn btn-primary float-right" href="{{url_for('add_new_post')}}">Create New Post</a>
-          <a class="btn btn-primary float-left" href="{{url_for('add_random_post')}}">Generate Random Post</a>
-        </div>
-
-        {% endif %}
-      </div>
     </div>
-  </div>
-  <hr>
+</div>
+<hr>
 
 {% include "footer.html" %}
