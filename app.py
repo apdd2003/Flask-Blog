@@ -10,8 +10,8 @@ os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = '1'
 os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = '1'
 
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "supersekrit")
-app.config["GOOGLE_OAUTH_CLIENT_ID"] = '274566446950-5u6cvu320bg7kl93rp4c80dhr6hvqge9.apps.googleusercontent.com' #os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
-app.config["GOOGLE_OAUTH_CLIENT_SECRET"] = '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' #os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
+app.config["GOOGLE_OAUTH_CLIENT_ID"] = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
+app.config["GOOGLE_OAUTH_CLIENT_SECRET"] = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
 
 #############################
 
