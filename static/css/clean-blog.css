@@ -160,6 +160,10 @@ img::-moz-selection {
     padding:10px;
 }
 
+.pagination-links{
+    text-align: center;
+    padding: 10x 0
+}
 #mainNav {
   position: absolute;
   border-bottom: 1px solid #e9ecef;

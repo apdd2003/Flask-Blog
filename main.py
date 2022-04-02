@@ -1,103 +1,38 @@
-import random
-
-from flask import Flask, render_template, redirect, url_for, flash
+from flask import render_template, redirect, url_for, flash, request
 from flask_bootstrap import Bootstrap
 from flask_ckeditor import CKEditor
 from datetime import date
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import relationship
-from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
+
+from models import User, Comment, BlogPost
+from flask_login import login_user, LoginManager, login_required, current_user, logout_user
 from functools import wraps
 from flask import abort
 from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 from flask_gravatar import Gravatar
-from bs4 import BeautifulSoup
-import requests
-import lxml
-import html
-from newspaper import Config, Article, Source
-import newspaper
-import os
+from randompost import random_post_process
 from flask_dance.contrib.google import make_google_blueprint, google
+from app import app, db
+from handlers import error_pages
 
-
-app = Flask(__name__)
-
-# ############ OAUTH #######
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = '1'
-os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = '1'
-
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "supersekrit")
-app.config["GOOGLE_OAUTH_CLIENT_ID"] = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
-app.config["GOOGLE_OAUTH_CLIENT_SECRET"] = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
 google_bp = make_google_blueprint(scope=["profile", "email"])
 app.register_blueprint(google_bp, url_prefix="/google-login")
-#############################
+app.register_blueprint(error_pages)
 
-app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY")
-# print(os.environ.get("SECRET_KEY"))
 ckeditor = CKEditor(app)
 Bootstrap(app)
 
-# CONNECT TO DB
-uri = os.getenv("DATABASE_URL", "sqlite:///blog.db")  # or other relevant config var
-if uri.startswith("postgres://"):
-    uri = uri.replace("postgres://", "postgresql://", 1)
-# app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL", "sqlite:///blog.db")
-app.config['SQLALCHEMY_DATABASE_URI'] = uri
-
-
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
 
 gravatar = Gravatar(app, size=100, rating='g', default='retro', force_default=False, force_lower=False, use_ssl=False,
                     base_url=None)
 
-headers = {'Accept-Language': "en-US,en;q=0.9",
-           'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36"}
-
-URL = "https://gadgets360.com/mobiles/news"
-
-response = requests.get(url=URL, headers=headers)
-
-yc_webpage = html.unescape(response.text)
-
-soup = BeautifulSoup(yc_webpage, "lxml")
-
-all_news_links = soup.select('div.caption_box>a')
-
-news_urls = []
-
-for new_link in all_news_links:
-    news_url = new_link.find_next(name='a')
-    news_url = news_url.get_attribute_list('href')[0]
-    if news_url != 'https://gadgets360.com/mobiles':
-        news_urls.append(news_url)
+login_manager = LoginManager()
+login_manager.init_app(app)
 
 
-def random_post_process():
-    config = Config()
-    config.keep_article_html = True
-
-    article_id = random.randint(0, 20)
-    try:
-        article = Article(url=news_urls[article_id], config=config)
-    except IndexError:
-        article = Article(url=news_urls[0], config=config)
-
-    article.download()
-
-    article.parse()
-
-    # random_post_content = article.text
-    random_post_content = article.article_html
-
-    random_post_title = article.title
-
-    random_post_img = article.top_img
-
-    return random_post_title, random_post_img, random_post_content
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 
 # Create admin-only decorator
@@ -111,49 +46,6 @@ def admin_only(f):
         return f(*args, **kwargs)
 
     return decorated_function
-
-
-# Create the User Table
-class User(UserMixin, db.Model):
-    __tablename__ = "users"
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(100), unique=True)
-    password = db.Column(db.String(100))
-    name = db.Column(db.String(100))
-
-    # This will act like a List of BlogPost objects attached to each User.
-    # The "author" refers to the author property in the BlogPost class.
-    posts = relationship("BlogPost", back_populates="author")
-
-    # "comment_author" refers to the comment_author property in the Comment class.
-    comments = relationship("Comment", back_populates="comment_author")
-
-
-class Comment(db.Model):
-    __tablename__ = "comments"
-    id = db.Column(db.Integer, primary_key=True)
-    author_id = db.Column(db.Integer, db.ForeignKey("users.id"))
-    comment_author = relationship("User", back_populates="comments")
-
-    # ***************Child Relationship*************#
-    post_id = db.Column(db.Integer, db.ForeignKey("blog_posts.id"))
-    parent_post = relationship("BlogPost", back_populates="comments")
-    text = db.Column(db.Text, nullable=False)
-
-
-class BlogPost(db.Model):
-    __tablename__ = "blog_posts"
-    id = db.Column(db.Integer, primary_key=True)
-    author_id = db.Column(db.Integer, db.ForeignKey("users.id"))
-    author = relationship("User", back_populates="posts")
-    title = db.Column(db.String(250), unique=False, nullable=False)
-    subtitle = db.Column(db.String(250), nullable=False)
-    date = db.Column(db.String(250), nullable=False)
-    body = db.Column(db.Text, nullable=False)
-    img_url = db.Column(db.String(250), nullable=False)
-
-    # ***************Parent Relationship*************#
-    comments = relationship("Comment", back_populates="parent_post")
 
 
 db.create_all()
@@ -220,9 +112,10 @@ def get_all_posts():
         user = User.query.filter_by(email=user_email).first()
         if user:
             login_user(user)
+    page = request.args.get('page', 1, type=int)
+    posts = BlogPost.query.order_by(BlogPost.id.desc()).paginate(page=page, per_page=5)
 
-    posts = BlogPost.query.all()
-    return render_template("index.html", all_posts=posts[::-1], current_user=current_user)
+    return render_template("index.html", all_posts=posts, current_user=current_user)
 
 
 @app.route('/logout')
@@ -296,10 +189,10 @@ def add_new_post():
 # Mark with decorator
 @admin_only
 def add_random_post():
-    random_post_title, random_post_img, random_post_content = random_post_process()
+    random_post_title, random_post_subtitle, random_post_img, random_post_content = random_post_process()
     form = CreatePostForm(
-        title=random_post_title[0:40],
-        subtitle=random_post_title,
+        title=random_post_title,
+        subtitle=random_post_subtitle,
         body=random_post_content,
         img_url=random_post_img,
     )
@@ -350,15 +243,6 @@ def delete_post(post_id):
     db.session.delete(post_to_delete)
     db.session.commit()
     return redirect(url_for('get_all_posts'))
-
-
-login_manager = LoginManager()
-login_manager.init_app(app)
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
 
 
 @app.route('/login', methods=["GET", "POST"])
