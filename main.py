@@ -1,9 +1,9 @@
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request, current_app, make_response
 from flask_bootstrap import Bootstrap
 from flask_ckeditor import CKEditor
 from datetime import date
 from werkzeug.security import generate_password_hash, check_password_hash
-
+import datetime
 from models import User, Comment, BlogPost
 from flask_login import login_user, LoginManager, login_required, current_user, logout_user
 from functools import wraps
@@ -15,13 +15,13 @@ from flask_dance.contrib.google import make_google_blueprint, google
 from app import app, db
 from handlers import error_pages
 
+
 google_bp = make_google_blueprint(scope=["profile", "email"])
 app.register_blueprint(google_bp, url_prefix="/google-login")
 app.register_blueprint(error_pages)
 
 ckeditor = CKEditor(app)
 Bootstrap(app)
-
 
 gravatar = Gravatar(app, size=100, rating='g', default='retro', force_default=False, force_lower=False, use_ssl=False,
                     base_url=None)
@@ -101,6 +101,51 @@ def register():
         return redirect(url_for("get_all_posts"))
 
     return render_template("register.html", form=form, current_user=current_user)
+
+
+@app.route("/sitemap")
+@app.route("/sitemap/")
+@app.route("/sitemap.xml")
+def sitemap():
+    """
+        Route to dynamically generate a sitemap of your website/application.
+        lastmod and priority tags omitted on static pages.
+        lastmod included on dynamic content such as blog posts.
+    """
+    from flask import make_response, request, render_template
+    import datetime
+    from urllib.parse import urlparse
+
+    host_components = urlparse(request.host_url)
+    host_base = host_components.scheme + "://" + host_components.netloc
+    print(host_base)
+
+    # Static routes with static content
+    static_urls = list()
+    for rule in app.url_map.iter_rules():
+        if not str(rule).startswith("/admin") and not str(rule).startswith("/user"):
+            if "GET" in rule.methods and len(rule.arguments) == 0:
+                url = {
+                    "loc": f"{host_base}{str(rule)}"
+                }
+                static_urls.append(url)
+
+    # Dynamic routes with dynamic content
+    dynamic_urls = list()
+    blog_posts = BlogPost.query.all()
+    for post in blog_posts:
+        url = {
+            "loc": f"{host_base}/post/{post.id}",
+            "lastmod": post.date
+        }
+        dynamic_urls.append(url)
+
+    xml_sitemap = render_template("public/sitemap.xml", static_urls=static_urls, dynamic_urls=dynamic_urls,
+                                  host_base=host_base)
+    response = make_response(xml_sitemap)
+    response.headers["Content-Type"] = "application/xml"
+
+    return response
 
 
 @app.route('/')
