@@ -1,6 +1,7 @@
 from sqlalchemy.orm import relationship
 from flask_login import UserMixin
-from app import db
+from app import db, app
+from itsdangerous import TimedSerializer as ts
 
 
 # db = db
@@ -19,6 +20,21 @@ class User(UserMixin, db.Model):
 
     # "comment_author" refers to the comment_author property in the Comment class.
     comments = relationship("Comment", back_populates="comment_author")
+
+    def get_token(self):
+        serial = ts(app.config['SECRET_KEY'])
+        token = serial.dumps({'user_id': self.id})
+        return token
+
+    @staticmethod
+    def verify_token(token):
+        serial = ts(app.config['SECRET_KEY'])
+        try:
+            user_id = serial.loads(token, max_age=1800)['user_id']
+
+        except:
+            return None
+        return User.query.get(user_id)
 
 
 class Comment(db.Model):

@@ -1,4 +1,5 @@
-from flask import render_template, redirect, url_for, flash, request, current_app, make_response
+import flask
+from flask import render_template, redirect, url_for, flash, request, current_app, make_response, session
 from flask_bootstrap import Bootstrap
 from flask_ckeditor import CKEditor
 from datetime import date
@@ -8,12 +9,13 @@ from models import User, Comment, BlogPost
 from flask_login import login_user, LoginManager, login_required, current_user, logout_user
 from functools import wraps
 from flask import abort
-from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
+from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm, ResetRequestForm, ResetPasswordForm
 from flask_gravatar import Gravatar
 from randompost import random_post_process
 from flask_dance.contrib.google import make_google_blueprint, google
-from app import app, db
+from app import app, db, mail
 from handlers import error_pages
+from flask_mail import Message
 
 
 google_bp = make_google_blueprint(scope=["profile", "email"])
@@ -301,17 +303,55 @@ def login():
 
         # Email doesn't exist
         if not user:
-            flash("That email does not exist, please try again.")
+            flash("That email does not exist, please try again.", 'warning')
             return redirect(url_for('login'))
         # Password incorrect
         elif not check_password_hash(user.password, password):
-            flash('Password incorrect, please try again.')
+            flash('Password incorrect, please try again.', 'warning')
             return redirect(url_for('login'))
         else:
             login_user(user)
             return redirect(url_for('get_all_posts'))
 
     return render_template("login.html", form=form, current_user=current_user)
+
+
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def reset_request():
+    form = ResetRequestForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user is None:
+            flash('Account does not exist for this email', 'warning')
+            return redirect(url_for('reset_request'))
+        token = User.get_token(user)
+        msg = Message('Password Reset Request',
+                      sender=app.config['MAIL_USERNAME'],
+                      recipients=[user.email]
+                      )
+        msg.body = f'Hi, Password reset request received for {user.email}. Please click on following link to reset ' \
+                   f'{url_for("reset_password",token=token, _external=True) }' \
+                   f'\nAbove link is valid for 30 minutes only'
+        mail.send(msg)
+        flash("Reset Link sent. Check Email.", 'success')
+        return redirect('forgot_password')   # user= current_user
+    return render_template('forgot_password.html', form=form, current_user=current_user)
+
+
+@app.route('/forgot_password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    user = User.verify_token(token)
+    if user is None:
+        flash('This is invalid or expired token', 'warning')
+        return redirect(url_for('reset_request'))
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        user.password = generate_password_hash(form.password.data)
+        db.session.commit()
+        flash('Password changed', 'success')
+
+        return redirect(url_for('login'))
+    return render_template('reset_password.html', form=form)
 
 
 if __name__ == "__main__":
