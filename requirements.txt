@@ -26,3 +26,4 @@ lxml>=4.8.0
 beautifulsoup4>=4.10.0
 newspaper3k>=0.2.8
 Flask-Dance>=5.1.0
+Flask-Mail>=0.9.1
