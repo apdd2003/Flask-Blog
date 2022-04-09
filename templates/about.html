@@ -1,31 +1,78 @@
 {% include "header.html" %}
 
-  <!-- Page Header -->
-  <header class="masthead" style="background-image: url({{ url_for('static', filename='img/about-bg.jpg')}})">
+<!-- Page Header -->
+<header class="masthead" style="background-image: url({{ url_for('static', filename='img/about-bg.jpg')}})">
     <div class="overlay"></div>
     <div class="container">
-      <div class="row">
-        <div class="col-lg-8 col-md-10 mx-auto">
-          <div class="page-heading">
-            <h1>About Me</h1>
-            <span class="subheading">This is what I do.</span>
-          </div>
+        <div class="row">
+            <div class="col-lg-8 col-md-10 mx-auto">
+                <div class="page-heading">
+                    <h1>About Project</h1>
+                    <span class="subheading">Skills I used/learned in this project</span>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </header>
+</header>
 
-  <!-- Main Content -->
-  <div class="container">
-    <div class="row">
-      <div class="col-lg-8 col-md-10 mx-auto">
-        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Saepe nostrum ullam eveniet pariatur voluptates odit, fuga atque ea nobis sit soluta odio, adipisci quas excepturi maxime quae totam ducimus consectetur?</p>
-        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Eius praesentium recusandae illo eaque architecto error, repellendus iusto reprehenderit, doloribus, minus sunt. Numquam at quae voluptatum in officia voluptas voluptatibus, minus!</p>
-        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aut consequuntur magnam, excepturi aliquid ex itaque esse est vero natus quae optio aperiam soluta voluptatibus corporis atque iste neque sit tempora!</p>
-      </div>
+<!-- Main Content -->
+<div class="row">
+    <div class="col-sm-4">
+        <div class="card border-dark mb-3" >
+            <div class="card-body">
+                <h5 class="card-title">Front-End</h5>
+                <p class="card-text">HTML, CSS- Bootstrap</p>
+                <a href="{{url_for('get_all_posts')}}" class="btn btn-primary">View</a>
+            </div>
+        </div>
     </div>
-  </div>
+    <div class="col-sm-4">
+        <div class="card border-dark mb-3" >
+            <div class="card-body">
+                <h5 class="card-title">Backend</h5>
+                <p class="card-text">Python - Flask</p>
+                <a href="{{url_for('get_all_posts')}}" class="btn btn-primary">View</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card border-dark mb-3" >
+            <div class="card-body">
+                <h5 class="card-title">Database ORM</h5>
+                <p class="card-text">SQL Alchemy</p>
+                <a href="{{url_for('register')}}" class="btn btn-primary">View</a>
+            </div>
+        </div>
+    </div>
+        <div class="col-sm-4">
+        <div class="card border-dark mb-3" >
+            <div class="card-body">
+                <h5 class="card-title">OAuth</h5>
+                <p class="card-text">Flask-Dance - Google</p>
+                <a href="{{url_for('google_auth')}}" class="btn btn-primary">View</a>
+            </div>
+        </div>
+    </div>
+        <div class="col-sm-4">
+        <div class="card border-dark mb-3" >
+            <div class="card-body">
+                <h5 class="card-title">Token based authentication</h5>
+                <p class="card-text">Itsdangerous - TimedSerializer, Flask-Mail</p>
+                <a href="{{url_for('reset_request')}}" class="btn btn-primary">View</a>
+            </div>
+        </div>
+    </div>
+        <div class="col-sm-4">
+        <div class="card border-dark mb-3" >
+            <div class="card-body">
+                <h5 class="card-title">Web Scrapping</h5>
+                <p class="card-text">Beautiful Soup, Newspaper3k</p>
+                <a href="{{url_for('get_all_posts')}}" class="btn btn-primary">View</a>
+            </div>
+        </div>
+    </div>
+</div>
 
-  <hr>
+<hr>
 
-  {% include "footer.html" %}
+{% include "footer.html" %}
