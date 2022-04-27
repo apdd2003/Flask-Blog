@@ -9,6 +9,6 @@ This project is done to improve my self-taught flask skills. The project include
 4. Auto generate a random post using web scrapping
 
 
-### Deployed on PythonAnywhere:
+### Deployed on Heroku:
 
 https://sam-sk.herokuapp.com/
