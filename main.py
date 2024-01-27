@@ -42,7 +42,7 @@ def admin_only(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         # If id is not 1 then return abort with 403 error
-        if not current_user.is_authenticated or current_user.id != 1:
+        if not current_user.is_authenticated or current_user.id != 3:
             return abort(403)
         # Otherwise, continue with the route function
         return f(*args, **kwargs)
@@ -50,7 +50,7 @@ def admin_only(f):
     return decorated_function
 
 
-db.create_all()
+# db.create_all()
 
 
 @app.route('/login/google')
