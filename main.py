@@ -234,7 +234,7 @@ def add_new_post():
 
 @app.route("/random-post", methods=['POST', 'GET'])
 # Mark with decorator
-@admin_only
+# @admin_only
 def add_random_post():
     random_post_title, random_post_subtitle, random_post_img, random_post_content = random_post_process()
     form = CreatePostForm(
