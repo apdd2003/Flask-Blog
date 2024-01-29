@@ -12,8 +12,9 @@ os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = '1'
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "supersecretkey")
 app.config["GOOGLE_OAUTH_CLIENT_ID"] = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
 app.config["GOOGLE_OAUTH_CLIENT_SECRET"] = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
-
-app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY")
+SECRET_KEY = os.urandom(32)
+app.config['SECRET_KEY'] = SECRET_KEY
+# app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY")
 
 # CONNECT TO DB
 uri = os.getenv("DATABASE_URL", "sqlite:///blog.db")  # or other relevant config var
