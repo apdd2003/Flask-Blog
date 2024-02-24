@@ -160,7 +160,8 @@ def get_all_posts():
         if user:
             login_user(user)
     page = request.args.get('page', 1, type=int)
-    posts = BlogPost.query.order_by(BlogPost.id.desc()).paginate(page=page, per_page=5)
+    posts = BlogPost.query.order_by(
+        BlogPost.id.desc()).paginate(page=page, per_page=5)
 
     return render_template("index.html", all_posts=posts, current_user=current_user)
 
@@ -233,18 +234,24 @@ def add_new_post():
 
 
 @app.route("/random-post", methods=['POST', 'GET'])
-# Mark with decorator
 @login_required
 # @admin_only
 def add_random_post():
+    MAX_RETRY = 3
     random_post_title, random_post_subtitle, random_post_img, random_post_content = random_post_process()
+    count = 0
+    while len(random_post_content) < 300 and count < MAX_RETRY:
+        count += 1
+        random_post_title, random_post_subtitle, random_post_img, random_post_content = random_post_process()
+    if len(random_post_content) < 300:
+        flash("There was an error generating post, please try again later.", 'warning')
+        return redirect(url_for("get_all_posts"))
     form = CreatePostForm(
         title=random_post_title,
         subtitle=random_post_subtitle,
         body=random_post_content,
         img_url=random_post_img,
     )
-    # current_user.__name='bot'
     if form.validate_on_submit():
         new_post = BlogPost(
             title=form.title.data,
@@ -356,4 +363,4 @@ def reset_password(token):
 
 
 if __name__ == "__main__":
-    app.run(debug=True,port=5001)
+    app.run(debug=True, port=5000)

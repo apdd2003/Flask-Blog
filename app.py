@@ -2,7 +2,8 @@ from flask import Flask
 import os
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail
-
+from dotenv import load_dotenv
+load_dotenv()
 app = Flask(__name__)
 
 # ############ OAUTH #######
