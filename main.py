@@ -10,12 +10,13 @@ from flask_login import login_user, LoginManager, login_required, current_user, 
 from functools import wraps
 from flask import abort
 from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm, ResetRequestForm, ResetPasswordForm
-from flask_gravatar import Gravatar
+# from flask_gravatar import Gravatar
 from randompost import random_post_process
 from flask_dance.contrib.google import make_google_blueprint, google
 from app import app, db, mail
 from handlers import error_pages
 from flask_mail import Message
+from flask_apscheduler import APScheduler
 
 
 google_bp = make_google_blueprint(scope=["profile", "email"])
@@ -24,13 +25,16 @@ app.register_blueprint(error_pages)
 
 ckeditor = CKEditor(app)
 Bootstrap(app)
-
-gravatar = Gravatar(app, size=100, rating='g', default='retro', force_default=False, force_lower=False, use_ssl=False,
-                    base_url=None)
+scheduler = APScheduler()
+# gravatar = Gravatar(app, size=100, rating='g', default='retro', force_default=False, force_lower=False, use_ssl=False,
+#                     base_url=None)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+scheduler.init_app(app)
+app.testing = True
+client = app.test_client()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -237,6 +241,7 @@ def add_new_post():
 @login_required
 # @admin_only
 def add_random_post():
+    print('adding random post')
     MAX_RETRY = 3
     random_post_title, random_post_subtitle, random_post_img, random_post_content = random_post_process()
     count = 0
@@ -366,4 +371,6 @@ def reset_password(token):
 
 
 if __name__ == "__main__":
+    # scheduler.add_job(id = 'Scheduled Task', func=scheduleTask, trigger="interval", seconds=10)
+    # scheduler.start()
     app.run(debug=True, port=5000)

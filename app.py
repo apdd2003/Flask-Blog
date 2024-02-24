@@ -17,12 +17,13 @@ SECRET_KEY = os.urandom(32)
 app.config['SECRET_KEY'] = SECRET_KEY
 # app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY")
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # CONNECT TO DB
-uri = os.getenv("DATABASE_URL", "sqlite:///blog.db")  # or other relevant config var
-if uri.startswith("postgres://"):
-    uri = uri.replace("postgres://", "postgresql://", 1)
+# uri = os.getenv("DATABASE_URL", "sqlite:///blog.db")  # or other relevant config var
+# if uri.startswith("postgres://"):
+#     uri = uri.replace("postgres://", "postgresql://", 1)
 # app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL", "sqlite:///blog.db")
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///blog.db"
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///'+os.path.join(BASE_DIR, "blog.db")
 
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False

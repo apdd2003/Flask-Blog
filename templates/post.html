@@ -48,13 +48,12 @@
                     <ul class="commentList">
                         <li>
                             <div class="commenterImage">
-                                 <img src="{{ comment.comment_author.email | gravatar }}"/>
-<!--                            <img src="{{ 'zzz.sochi@gmail.com' | gravatar }}"/>-->
+                                 <img src="{{ comment.comment_author.email  }}"/>
+
                             </div>
                             <div class="commentText">
                                 {{comment.text|safe}}
                                 <span class="date sub-text">{{comment.comment_author.name}}</span>
-<!--                                <span class="date sub-text">{{ 'zzz.sochi@gmail.com' | gravatar }}</span>-->
 
 
 
