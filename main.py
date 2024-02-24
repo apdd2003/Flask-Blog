@@ -16,7 +16,7 @@ from flask_dance.contrib.google import make_google_blueprint, google
 from app import app, db, mail
 from handlers import error_pages
 from flask_mail import Message
-from flask_apscheduler import APScheduler
+# from flask_apscheduler import APScheduler
 
 
 google_bp = make_google_blueprint(scope=["profile", "email"])
