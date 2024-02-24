@@ -263,7 +263,10 @@ def add_random_post():
             date=date.today().strftime("%B %d, %Y")
         )
         db.session.add(new_post)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            flash('Server error, Please try again later.','error')
         return redirect(url_for("get_all_posts"))
     return render_template("make-post.html", form=form, current_user=current_user)
 
