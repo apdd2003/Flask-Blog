@@ -11,5 +11,4 @@ This project is done to improve my self-taught flask skills. The project include
 
 ### Deployed on EC2:
 
-[https://sam-sk.herokuapp.com/
-](https://scrapverse.trackit.co.in/)https://scrapverse.trackit.co.in/
+[https://scrapverse.trackit.co.in/](https://scrapverse.trackit.co.in/)
