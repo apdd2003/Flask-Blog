@@ -13,10 +13,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-
       - name: Add SSH key
         uses: webfactory/ssh-agent@v0.7.0
         with:
