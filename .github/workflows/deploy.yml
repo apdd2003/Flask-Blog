@@ -1,0 +1,32 @@
+name: Deploy Flask App to EC2
+
+on:
+  push:
+    branches:
+      - main  
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/devkey.pem ubuntu@ec2-100-25-213-29.compute-1.amazonaws.com "
+            cd ~/Flask-Blog &&
+            git fetch origin main &&
+            git reset --hard origin/main &&
+            sudo systemctl restart blog.service
+          "
